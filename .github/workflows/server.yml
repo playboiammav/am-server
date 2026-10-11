@@ -11,7 +11,7 @@ jobs:
           clang wrapper-lite.c cmdline.c -o wrapper-lite -ldl
       - run: |
           cd wrapper
-          ./wrapper-lite &
+          sudo ./wrapper-lite &
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
           ./cloudflared tunnel --url http://127.0.0.1:12340 > tunnel.log 2>&1 &
