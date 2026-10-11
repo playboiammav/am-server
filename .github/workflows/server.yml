@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          docker run -d --name amdl-box -p 7681:7681 -p 10020:10020 ghcr.io/akina-up/wrapper-amdl:latest
+          docker run -d --name amdl-box --network host ghcr.io/akina-up/wrapper-amdl:latest
           sudo npm install -g localtunnel
           lt --port 7681 > login.log 2>&1 &
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
