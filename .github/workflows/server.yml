@@ -5,10 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          docker run -d --name amdl-box -p 7681:7681 -e AUTH_TOKEN="" ghcr.io/akina-up/wrapper-amdl:latest
+          docker run -d --name amdl-box -p 7681:7681 -p 12340:12340 ghcr.io/akina-up/wrapper-amdl:latest
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
-          ./cloudflared tunnel --url http://127.0.0.1:7681 --no-chunked-encoding > tunnel.log 2>&1 &
+          ./cloudflared tunnel --url http://127.0.0.1:12340 --no-chunked-encoding > tunnel.log 2>&1 &
           sleep 15
           LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' tunnel.log | head -n 1)
           curl -d "$LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
