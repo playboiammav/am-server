@@ -4,7 +4,7 @@ jobs:
   run-server:
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt update && sudo apt install -y clang wget curl
+      - run: sudo dpkg --add-architecture i386 && sudo apt update && sudo apt install -y clang wget curl libc6:i386 libstdc++6:i386
       - run: |
           git clone -b lite https://github.com/WorldObservationLog/wrapper.git
           cd wrapper
