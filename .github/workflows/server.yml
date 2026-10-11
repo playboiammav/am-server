@@ -5,15 +5,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          docker run -d --name amdl-box --network host ghcr.io/akina-up/wrapper-amdl:latest
+          # تشغيل السيرفر
+          docker run -d --name amdl-box -p 7681:7681 ghcr.io/akina-up/wrapper-amdl:latest
+          
+          # تشغيل نفق المتصفح (عشان تسجل دخول)
           sudo npm install -g localtunnel
           lt --port 7681 > login.log 2>&1 &
+          
+          # الخدعة: تحميل نفق كلاودفلير ونسخه (تهريبه) لداخل الدوكر نفسه
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
-          ./cloudflared tunnel --url http://127.0.0.1:10020 --no-chunked-encoding > api.log 2>&1 &
+          docker cp cloudflared amdl-box:/cloudflared
+          
+          # تشغيل النفق من "داخل" الدوكر عشان يتخطى حظر الـ 127.0.0.1
+          docker exec -d amdl-box sh -c "/cloudflared tunnel --url http://127.0.0.1:10020 --no-chunked-encoding > /api.log 2>&1"
+          
           sleep 15
+          
+          # سحب الروابط
           LOGIN_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.loca\.lt' login.log | head -n 1)
-          API_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' api.log | head -n 1)
+          API_LINK=$(docker exec amdl-box cat /api.log | grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' | head -n 1)
+          
           curl -d "رابط المتصفح: $LOGIN_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
           curl -d "رابط تيرموكس: $API_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
           sleep 21600
