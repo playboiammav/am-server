@@ -5,14 +5,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          docker run -d --name amdl-box -p 7681:7681 -p 12340:12340 ghcr.io/akina-up/wrapper-amdl:latest
+          docker run -d --name amdl-box -p 7681:7681 -p 10020:10020 ghcr.io/akina-up/wrapper-amdl:latest
+          sudo npm install -g localtunnel
+          lt --port 7681 > login.log 2>&1 &
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
-          ./cloudflared tunnel --url http://127.0.0.1:7681 --no-chunked-encoding > tunnel_login.log 2>&1 &
-          ./cloudflared tunnel --url http://127.0.0.1:12340 --no-chunked-encoding > tunnel_api.log 2>&1 &
+          ./cloudflared tunnel --url http://127.0.0.1:10020 --no-chunked-encoding > api.log 2>&1 &
           sleep 15
-          LOGIN_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' tunnel_login.log | head -n 1)
-          API_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' tunnel_api.log | head -n 1)
+          LOGIN_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.loca\.lt' login.log | head -n 1)
+          API_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' api.log | head -n 1)
           curl -d "رابط المتصفح: $LOGIN_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
           curl -d "رابط تيرموكس: $API_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
           sleep 21600
