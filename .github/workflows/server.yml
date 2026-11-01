@@ -5,27 +5,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          # تشغيل الدوكر
-          docker run -d --name amdl-box -p 7681:7681 ghcr.io/akina-up/wrapper-amdl:latest
-          
-          # تحميل كلاودفلير
+          docker run -d --name amdl-box --network host ghcr.io/akina-up/wrapper-amdl:latest
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
           
-          # النفق الأول للمتصفح (من بره الدوكر)
           ./cloudflared tunnel --url http://127.0.0.1:7681 > web.log 2>&1 &
-          
-          # النفق التاني للـ API (بنسخه جوه الدوكر ونشغله هناك عشان يمسك في البورت 10020 صح)
-          docker cp cloudflared amdl-box:/cloudflared
-          docker exec -d amdl-box sh -c "/cloudflared tunnel --url http://127.0.0.1:10020 --no-chunked-encoding > /api.log 2>&1"
-          
-          sleep 15
-          
-          # سحب الروابط
+          sleep 8
           WEB_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' web.log | head -n 1)
-          API_LINK=$(docker exec amdl-box grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' /api.log | head -n 1)
-          
           curl -d "رابط 1 (للمتصفح): $WEB_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
-          curl -d "رابط 2 (لتيرموكس): $API_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
+          
+          (
+            while ! bash -c 'echo > /dev/tcp/127.0.0.1/10020' 2>/dev/null; do sleep 2; done
+            ./cloudflared tunnel --url http://127.0.0.1:10020 > api.log 2>&1 &
+            sleep 10
+            API_LINK=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' api.log | head -n 1)
+            curl -d "رابط 2 (لتيرموكس): $API_LINK" "https://ntfy.sh/amdl_server_${{ github.actor }}"
+          ) &
           
           sleep 21600
